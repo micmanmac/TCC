@@ -1,0 +1,36 @@
+[
+    {
+        "id": 1,
+        "category": "Prevenção",
+        "question": "O uso de preservativo é a única forma de prevenção contra o HIV?",
+        "options": [
+            "Verdadeiro",
+            "Falso"
+        ],
+        "answer": "Falso",
+        "explanation": "Existem outras formas como a PrEP (Profilaxia Pré-Exposição) e a PEP (Profilaxia Pós-Exposição), além do não compartilhamento de agulhas."
+    },
+    {
+        "id": 2,
+        "category": "Diagnóstico",
+        "question": "Qual o principal exame para detectar o HIV?",
+        "options": [
+            "Hemograma",
+            "Teste Rápido ou Sorologia (ELISA)",
+            "Raio-X"
+        ],
+        "answer": "Teste Rápido ou Sorologia (ELISA)",
+        "explanation": "O diagnóstico é feito através de testes que detectam anticorpos produzidos pelo corpo em resposta ao vírus."
+    },
+    {
+        "id": 3,
+        "category": "Tratamento",
+        "question": "O HIV tem cura?",
+        "options": [
+            "Sim",
+            "Não, mas tem tratamento"
+        ],
+        "answer": "Não, mas tem tratamento",
+        "explanation": "Atualmente não há cura definitiva, mas o tratamento com antirretrovirais (TARV) permite que a pessoa viva com qualidade e carga viral indetectável."
+    }
+]
