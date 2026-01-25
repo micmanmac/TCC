@@ -7,7 +7,12 @@ export interface Node {
 }
 
 export interface Player {
+    id: number;
+    name: string;
     currentNodeId: number;
+    color: string;
+    isBlocked: boolean;
+    finishedRank?: number; // 1st, 2nd, 3rd...
 }
 
 export interface Question {
