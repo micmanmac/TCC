@@ -14,10 +14,10 @@ export interface Coordinate {
 
 export const BOARD_COORDINATES: Coordinate[] = [
     // Start Position (Off Board)
-    { id: 0, top: 16, left: 14 },
+    { id: 0, top: 20, left: 14 },
 
     // Top Row (Left to Right)
-    { id: 1, top: 15, left: 28 },
+    { id: 1, top: 17, left: 30 },
     { id: 2, top: 18, left: 43 },
     { id: 3, top: 21, left: 54 },
     { id: 4, top: 17, left: 65 },
@@ -50,9 +50,9 @@ export const BOARD_COORDINATES: Coordinate[] = [
     { id: 21, top: 90, left: 23 },
     { id: 22, top: 93, left: 30 },
     { id: 23, top: 90, left: 38 },
-    { id: 24, top: 42, left: 52 },
-    { id: 25, top: 42, left: 48 }, // Finish
+    { id: 24, top: 87, left: 47 },
+    { id: 25, top: 91, left: 56 }, // Finish
 
     // Winner Zone (Off Board - After Finish)
-    { id: 26, top: 42, left: 83 }
+    { id: 26, top: 92, left: 85 }
 ];

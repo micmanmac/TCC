@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Board } from './components/Board';
-import { Dice } from './components/Dice';
+import { Dice3D } from './components/Dice3D';
 import { CardModal } from './components/CardModal';
 import { GameSetup } from './components/GameSetup';
 import type { Node, Player, Question } from './types';
@@ -43,6 +43,8 @@ function App() {
     const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [rankCounter, setRankCounter] = useState(1);
     const [usedQuestionIds, setUsedQuestionIds] = useState<Set<number>>(new Set());
+    const [isRolling, setIsRolling] = useState(false);
+    const [diceResult, setDiceResult] = useState(1);
 
     const currentPlayer = players[currentPlayerIndex];
 
@@ -108,14 +110,12 @@ function App() {
         let pool = categoryQuestions;
 
         // Fallback: If ran out of unique questions in category, reset usage for that category OR use full pool?
-        // Let's allow reuse if exhausted, or expand to full unexhausted pool.
         if (pool.length === 0) {
             // Try full pool of unused
             pool = QUESTIONS.filter(q => !usedQuestionIds.has(q.id));
             if (pool.length === 0) {
                 // Absolute fallback: Recyle all questions but warn or just proceed
                 pool = QUESTIONS;
-                // Optionally clear usedIds here if we want to loop, but let's just pick from full list to avoid crash
             }
         }
 
@@ -129,18 +129,34 @@ function App() {
         setIsModalOpen(true);
     };
 
-    const handleRoll = (roll: number) => {
-        if (gamePhase !== 'turn_start') return;
+    const handleDiceClick = () => {
+        if (gamePhase !== 'turn_start' || isRolling) return;
 
-        // Rule: If blocked, skip roll, go straight to question at CURRENT position
         if (currentPlayer.isBlocked) {
             triggerQuestion(currentPlayer.currentNodeId);
             return;
         }
 
+        setIsRolling(true);
+
+        // Suspense time (rolling animation)
+        setTimeout(() => {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            setDiceResult(roll); // Set result
+
+            // Stop rolling to transition to result face
+            setIsRolling(false);
+
+            // Wait for transition to finish (1s transition in CSS) + reading time
+            setTimeout(() => {
+                executeMove(roll);
+            }, 1500); // 1s visual transition + 0.5s pause
+        }, 2000); // 2 seconds of frantic rolling
+    };
+
+    const executeMove = (roll: number) => {
         let nextId = currentPlayer.currentNodeId + roll;
-        // If > 25, cap at 25 for movement visual first? Or jump to 26?
-        // Let's cap at 25 for "Finish Line" logic.
+        // If > 25, cap at 25 for "Finish Line" logic.
         if (nextId >= 25) {
             nextId = 25;
         }
@@ -151,8 +167,6 @@ function App() {
         setTimeout(() => {
             if (nextId === 25) {
                 // Player finished!
-                // Logic: Assign rank, move to 26 (Winner Zone) immediately or after alert?
-                // Let's move to 26 to show them off board.
                 const finishedRank = rankCounter;
                 setRankCounter(prev => prev + 1);
 
@@ -179,30 +193,15 @@ function App() {
             if (i !== currentPlayerIndex) return p;
 
             if (correct) {
-                // Correct answer
-                // Logic: Unblock if blocked. End turn successfully.
-                // Rule: "Quando acerta pode continuar jogando..." implementation:
-                // We'll treat it as "Unlocked/Safe to proceed next turn". 
-                // Creating an infinite loop of turns for one player might be too OP, 
-                // so we usually pass turn after success unless it's a specific "Play Again" bonus.
-                // Given the instruction "Who hits, continues in the next round" usually implies standard turn flow.
                 return { ...p, isBlocked: false };
             } else {
-                // Incorrect answer
-                // Logic: Block player. They stay put.
                 return { ...p, isBlocked: true };
             }
         }));
 
         if (correct) {
-            // Optional: If you want them to roll again immediately:
-            // setGamePhase('turn_start'); 
-            // BUT instruction says "acerta continua na próxima rodada", usually implies next turn is theirs/valid.
-            // Standard board game: turn ends.
             nextTurn();
         } else {
-            // Player blocked. Turn ends. 
-            // Next turn they will have to answer again (logic in handleRoll check).
             alert(`Que pena, ${currentPlayer.name}! Você errou. Na próxima rodada terá que responder outra pergunta para tentar desbloquear.`);
             nextTurn();
         }
@@ -245,9 +244,10 @@ function App() {
                 <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl px-4">
                     <div className="flex-1">
                         <Board nodes={nodes} players={players} />
-                        <p className="text-center text-sm text-gray-600 mt-4">
-                            Página desenvolvida pelo Prof. Dr. Michel Mansur Machado (michelmachado@unipampa.edu.br).
-                        </p>
+                        <div className="text-center text-sm text-gray-600 mt-4">
+                            <p>Página desenvolvida pelo Prof. Dr. Michel Mansur Machado</p>
+                            <p>michelmachado@unipampa.edu.br</p>
+                        </div>
                     </div>
 
                     <div className="w-full md:w-64 flex flex-col gap-4">
@@ -290,9 +290,14 @@ function App() {
                             </div>
                         </div>
 
-                        <Dice
-                            onRoll={handleRoll}
+                        <Dice3D
+                            rolling={isRolling}
+                            result={diceResult}
+                            onClick={handleDiceClick}
                             disabled={gamePhase !== 'turn_start' && !currentPlayer?.isBlocked}
+                        // Logic tweak: The Dice component might handle animation internally.
+                        // If blocked, we might want a "Responder" button instead of Dice?
+                        // For simplicity, we can let them click Dice to "Try" and it triggers the question immediately if blocked.
                         />
 
                         {currentPlayer?.isBlocked && gamePhase === 'turn_start' && (

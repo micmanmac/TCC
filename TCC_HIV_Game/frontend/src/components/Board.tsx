@@ -1,5 +1,6 @@
 import type { Node, Player } from '../types';
 import { useEffect, useState } from 'react';
+import { GamePawn } from './GamePawn';
 
 interface BoardProps {
     nodes: Node[];
@@ -17,9 +18,6 @@ export const Board = ({ nodes, players }: BoardProps) => {
             const currentNode = nodes.find(n => n.id === player.currentNodeId);
             if (currentNode) {
                 // Add slight offset for multiple players on same node
-                // Simple strategy: offset by index * a small amount
-                // Or better: circular distribution if many? 
-                // For 4 players, static offsets work well enough
                 const baseTop = currentNode.y;
                 const baseLeft = currentNode.x;
 
@@ -70,20 +68,21 @@ export const Board = ({ nodes, players }: BoardProps) => {
             {players.map((player) => (
                 <div
                     key={player.id}
-                    className={`absolute w-8 h-8 -ml-4 -mt-4 border-2 border-white rounded-full shadow-lg z-20 flex items-center justify-center transition-all duration-500 ease-in-out`}
+                    className="absolute transition-all duration-500 ease-in-out z-20"
                     style={{
                         top: pawnPositions[player.id]?.top || '0%',
                         left: pawnPositions[player.id]?.left || '0%',
-                        backgroundColor: player.color
+                        // Adjust margin to center the pawn (width 24px, height 48px -> -ml-3 -mt-6 approx)
+                        // Actually let's trust the pawn's internal sizing but center the container
+                        marginLeft: '-12px', // half of w-6 (24px)
+                        marginTop: '-40px', // anchor bottom of pawn to the point
                     }}
-                    title={`${player.name} (Casa ${player.currentNodeId})`}
                 >
-                    {player.isBlocked && (
-                        <div className="absolute -top-3 -right-3 text-xl">🚫</div>
-                    )}
-                    <div className="absolute -top-8 bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity">
-                        {player.name}
-                    </div>
+                    <GamePawn
+                        color={player.color}
+                        name={player.name}
+                        isBlocked={player.isBlocked}
+                    />
                 </div>
             ))}
         </div>
