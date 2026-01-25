@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Board } from './components/Board';
 import { Dice3D } from './components/Dice3D';
 import { QuizModal } from './components/QuizModal';
@@ -7,6 +7,8 @@ import { GameRules } from './components/GameRules';
 import { GameSetup } from './components/GameSetup';
 import { ReferencesModal } from './components/ReferencesModal';
 import { OrientationLock } from './components/OrientationLock';
+import { GameTimer } from './components/GameTimer';
+import { FinishTurnModal } from './components/FinishTurnModal';
 
 import { useGameSounds } from './hooks/useGameSounds';
 
@@ -48,15 +50,32 @@ function App() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPenaltyModalOpen, setIsPenaltyModalOpen] = useState(false);
     const [isReferencesOpen, setIsReferencesOpen] = useState(false);
+    const [finishedPlayerData, setFinishedPlayerData] = useState<{ name: string; rank: number } | null>(null);
     const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [rankCounter, setRankCounter] = useState(1);
     const [usedQuestionIds, setUsedQuestionIds] = useState<Set<number>>(new Set());
     const [isRolling, setIsRolling] = useState(false);
     const [diceResult, setDiceResult] = useState(1);
+    const [elapsedTime, setElapsedTime] = useState(0);
 
     const { isMuted, toggleMute, playRoll, playCorrect, playWrong, playWin } = useGameSounds();
 
     const currentPlayer = players[currentPlayerIndex];
+
+    // Timer Effect
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval>;
+
+        if (gamePhase !== 'setup' && gamePhase !== 'rules' && gamePhase !== 'game_over') {
+            interval = setInterval(() => {
+                setElapsedTime(prev => prev + 1);
+            }, 1000);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [gamePhase]);
 
     const startGame = (playerNames: string[]) => {
         const newPlayers: Player[] = playerNames.map((name, index) => ({
@@ -65,12 +84,15 @@ function App() {
             currentNodeId: 0,
             color: PLAYER_COLORS[index % PLAYER_COLORS.length],
             isBlocked: false,
-            finishedRank: undefined
+            finishedRank: undefined,
+            correctAnswers: 0,
+            wrongAnswers: 0
         }));
         setPlayers(newPlayers);
         setCurrentPlayerIndex(0);
         setRankCounter(1);
         setUsedQuestionIds(new Set());
+        setElapsedTime(0);
         setGamePhase('rules');
     };
 
@@ -173,12 +195,13 @@ function App() {
                 playWin();
 
                 const updatedPlayers = players.map((p, i) =>
-                    i === currentPlayerIndex ? { ...p, currentNodeId: 26, finishedRank } : p
+                    i === currentPlayerIndex ? { ...p, currentNodeId: 26, finishedRank, finishTime: elapsedTime } : p
                 );
                 setPlayers(updatedPlayers);
 
-                alert(`Parabéns ${currentPlayer.name}! Você terminou em ${finishedRank}º lugar!`);
-                checkGameOver(updatedPlayers);
+                setFinishedPlayerData({ name: currentPlayer.name, rank: finishedRank });
+
+                // checkGameOver will be called when modal closes
             } else {
                 setPlayers(prev => prev.map((p, i) =>
                     i === currentPlayerIndex ? { ...p, currentNodeId: nextId } : p
@@ -195,9 +218,9 @@ function App() {
             if (i !== currentPlayerIndex) return p;
 
             if (correct) {
-                return { ...p, isBlocked: false };
+                return { ...p, isBlocked: false, correctAnswers: p.correctAnswers + 1 };
             } else {
-                return { ...p, isBlocked: true };
+                return { ...p, isBlocked: true, wrongAnswers: p.wrongAnswers + 1 };
             }
         }));
 
@@ -213,9 +236,26 @@ function App() {
         nextTurn();
     };
 
+    const handleFinishModalClose = () => {
+        setFinishedPlayerData(null);
+        // We need the updated players list here
+        checkGameOver(players);
+    };
+
+    const formatTime = (totalSeconds: number) => {
+        const minutes = Math.floor(totalSeconds / 60);
+        const remainingSeconds = totalSeconds % 60;
+        return `${minutes}m ${remainingSeconds}s`;
+    };
+
     return (
         <div className="min-h-screen w-full bg-slate-100 flex flex-col items-center py-8 relative">
             <OrientationLock />
+
+            {/* Game Timer - Top Left (only when playing) */}
+            {gamePhase !== 'setup' && gamePhase !== 'rules' && gamePhase !== 'game_over' && (
+                <GameTimer seconds={elapsedTime} />
+            )}
 
             {/* Mute Button - Top Right */}
             <button
@@ -239,22 +279,52 @@ function App() {
             ) : gamePhase === 'rules' ? (
                 <GameRules onStartMatch={startMatch} />
             ) : gamePhase === 'game_over' ? (
-                <div className="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full animate-fade-in text-center">
+                <div className="bg-white p-8 rounded-xl shadow-2xl max-w-4xl w-full animate-fade-in text-center">
                     <h2 className="text-3xl font-bold text-red-700 mb-6">Ranking Final</h2>
-                    <div className="flex flex-col gap-4">
-                        {[...players].sort((a, b) => (a.finishedRank || 99) - (b.finishedRank || 99)).map((p, index) => (
-                            <div key={p.id} className="flex justify-between items-center bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <span className="flex items-center gap-3">
-                                    <span className="text-2xl font-bold">
-                                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏅'}
-                                    </span>
-                                    <span className="text-xl font-bold text-gray-400">#{index + 1}</span>
-                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: p.color }} />
-                                    <span className="text-lg font-bold text-gray-800">{p.name}</span>
-                                </span>
-                                <span className="font-bold text-green-600">Chegou!</span>
-                            </div>
-                        ))}
+
+                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-gray-600 font-bold uppercase text-xs mb-1">Tempo Total de Jogo</p>
+                        <p className="text-3xl font-bold text-blue-700 font-mono">{formatTime(elapsedTime)}</p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-100 border-b border-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                    <th className="py-3 px-6 text-center">Pos</th>
+                                    <th className="py-3 px-6 text-left">Jogador</th>
+                                    <th className="py-3 px-6 text-center">Tempo</th>
+                                    <th className="py-3 px-6 text-center text-green-600">Acertos</th>
+                                    <th className="py-3 px-6 text-center text-red-600">Erros</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-gray-600 text-sm font-light">
+                                {[...players].sort((a, b) => (a.finishedRank || 99) - (b.finishedRank || 99)).map((p, index) => (
+                                    <tr key={p.id} className="border-b border-gray-200 hover:bg-gray-50">
+                                        <td className="py-3 px-6 text-center whitespace-nowrap">
+                                            <span className="text-2xl font-bold">
+                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏅'}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-6 text-left">
+                                            <div className="flex items-center">
+                                                <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: p.color }} />
+                                                <span className="font-bold text-lg">{p.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-3 px-6 text-center font-mono font-bold">
+                                            {p.finishTime ? formatTime(p.finishTime) : '-'}
+                                        </td>
+                                        <td className="py-3 px-6 text-center font-bold text-green-600 text-lg">
+                                            {p.correctAnswers}
+                                        </td>
+                                        <td className="py-3 px-6 text-center font-bold text-red-600 text-lg">
+                                            {p.wrongAnswers}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                     <button
                         onClick={() => setGamePhase('setup')}
@@ -328,7 +398,7 @@ function App() {
 
             {/* Footer with Credits and References */}
             <div className="w-full text-center text-sm text-gray-600 py-6 mt-auto border-t bg-slate-100">
-                <p className="font-semibold text-gray-800">HIV de A a Z: Jogo Educativo</p>
+                <p className="font-semibold text-gray-800">HIV de A a Z: O Jogo</p>
                 <p>Webpage desenvolvida pelo Prof. Dr. Michel Mansur Machado</p>
                 <p className="mb-2">michelmachado@unipampa.edu.br</p>
 
@@ -353,6 +423,13 @@ function App() {
                 isOpen={isPenaltyModalOpen}
                 onClose={handlePenaltyClose}
                 playerName={currentPlayer?.name || ''}
+            />
+
+            <FinishTurnModal
+                isOpen={!!finishedPlayerData}
+                onClose={handleFinishModalClose}
+                playerName={finishedPlayerData?.name || ''}
+                rank={finishedPlayerData?.rank || 0}
             />
 
             <ReferencesModal

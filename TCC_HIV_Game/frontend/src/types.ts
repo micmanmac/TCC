@@ -13,6 +13,9 @@ export interface Player {
     color: string;
     isBlocked: boolean;
     finishedRank?: number; // 1st, 2nd, 3rd...
+    finishTime?: number;
+    correctAnswers: number;
+    wrongAnswers: number;
 }
 
 export interface Question {
