@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Board } from './components/Board';
 import { Dice3D } from './components/Dice3D';
-import { CardModal } from './components/CardModal';
+import { QuizModal } from './components/QuizModal';
+import { PenaltyModal } from './components/PenaltyModal';
+import { GameRules } from './components/GameRules';
 import { GameSetup } from './components/GameSetup';
+
 import type { Node, Player, Question } from './types';
 import { QUESTIONS } from './data/questions';
 import { BOARD_COORDINATES } from './data/boardCoordinates';
@@ -11,12 +14,11 @@ import { BOARD_COORDINATES } from './data/boardCoordinates';
 const generateNodes = (): Node[] => {
     return BOARD_COORDINATES.map(coord => {
         let type: Node['type'] = 'normal';
-        if (coord.id === 0) type = 'start'; // New true start
-        if (coord.id === 1) type = 'normal'; // Was start, now normal
+        if (coord.id === 0) type = 'start';
+        if (coord.id === 1) type = 'normal';
         if (coord.id === 25) type = 'finish';
-        if (coord.id === 26) type = 'finish'; // Winner Zone is also finish type for styling? Or normal.
+        if (coord.id === 26) type = 'finish';
 
-        // Colors/Types based on ranges could be visual, but logic handles categories
         if (coord.id >= 1 && coord.id <= 5) type = 'normal'; // Prevenção
         if (coord.id >= 6 && coord.id <= 10) type = 'normal'; // Diagnóstico
         if (coord.id >= 11 && coord.id <= 15) type = 'normal'; // Aconselhamento
@@ -38,8 +40,9 @@ function App() {
     const [nodes] = useState<Node[]>(generateNodes());
     const [players, setPlayers] = useState<Player[]>([]);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-    const [gamePhase, setGamePhase] = useState<'setup' | 'turn_start' | 'moving' | 'answering' | 'game_over'>('setup');
+    const [gamePhase, setGamePhase] = useState<'setup' | 'rules' | 'turn_start' | 'moving' | 'answering' | 'game_over'>('setup');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPenaltyModalOpen, setIsPenaltyModalOpen] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [rankCounter, setRankCounter] = useState(1);
     const [usedQuestionIds, setUsedQuestionIds] = useState<Set<number>>(new Set());
@@ -52,16 +55,20 @@ function App() {
         const newPlayers: Player[] = playerNames.map((name, index) => ({
             id: index,
             name: name,
-            currentNodeId: 0, // Start at 0 (Off Board)
+            currentNodeId: 0,
             color: PLAYER_COLORS[index % PLAYER_COLORS.length],
             isBlocked: false,
-            finishedRank: undefined // New property for ranking
+            finishedRank: undefined
         }));
         setPlayers(newPlayers);
         setCurrentPlayerIndex(0);
         setRankCounter(1);
-        setUsedQuestionIds(new Set()); // Reset used questions
-        setGamePhase('turn_start');
+        setUsedQuestionIds(new Set());
+        setGamePhase('rules'); // Setup -> Rules
+    };
+
+    const startMatch = () => {
+        setGamePhase('turn_start'); // Rules -> Game
     };
 
     const checkGameOver = (currentPlayers: Player[]) => {
@@ -69,9 +76,7 @@ function App() {
         if (allFinished) {
             setGamePhase('game_over');
         } else {
-            // Find next player who hasn't finished
             let nextIndex = (currentPlayerIndex + 1) % currentPlayers.length;
-            // Loop until an unfinshed player is found or all players are checked
             let attempts = 0;
             while (currentPlayers[nextIndex].finishedRank !== undefined && attempts < currentPlayers.length) {
                 nextIndex = (nextIndex + 1) % currentPlayers.length;
@@ -85,7 +90,7 @@ function App() {
     const nextTurn = () => {
         setPlayers(prevPlayers => {
             checkGameOver(prevPlayers);
-            return prevPlayers; // Return prevPlayers as state update is handled by checkGameOver
+            return prevPlayers;
         });
     };
 
@@ -100,7 +105,6 @@ function App() {
 
     const triggerQuestion = (nodeId: number) => {
         const category = getQuestionCategory(nodeId);
-        // Filter questions by category AND not used
         const categoryQuestions = QUESTIONS.filter(q =>
             (q.category.toLowerCase().includes(category.toLowerCase()) ||
                 (category === "Mitos e Curiosidades" && q.category.includes("Mitos"))) &&
@@ -108,22 +112,15 @@ function App() {
         );
 
         let pool = categoryQuestions;
-
-        // Fallback: If ran out of unique questions in category, reset usage for that category OR use full pool?
         if (pool.length === 0) {
-            // Try full pool of unused
             pool = QUESTIONS.filter(q => !usedQuestionIds.has(q.id));
             if (pool.length === 0) {
-                // Absolute fallback: Recyle all questions but warn or just proceed
                 pool = QUESTIONS;
             }
         }
 
         const randomQuestion = pool[Math.floor(Math.random() * pool.length)];
-
-        // Mark as used
         setUsedQuestionIds(prev => new Set(prev).add(randomQuestion.id));
-
         setCurrentQuestion(randomQuestion);
         setGamePhase('answering');
         setIsModalOpen(true);
@@ -139,34 +136,27 @@ function App() {
 
         setIsRolling(true);
 
-        // Suspense time (rolling animation)
         setTimeout(() => {
             const roll = Math.floor(Math.random() * 6) + 1;
-            setDiceResult(roll); // Set result
-
-            // Stop rolling to transition to result face
+            setDiceResult(roll);
             setIsRolling(false);
 
-            // Wait for transition to finish (1s transition in CSS) + reading time
             setTimeout(() => {
                 executeMove(roll);
-            }, 1500); // 1s visual transition + 0.5s pause
-        }, 2000); // 2 seconds of frantic rolling
+            }, 1500);
+        }, 2000);
     };
 
     const executeMove = (roll: number) => {
         let nextId = currentPlayer.currentNodeId + roll;
-        // If > 25, cap at 25 for "Finish Line" logic.
         if (nextId >= 25) {
             nextId = 25;
         }
 
         setGamePhase('moving');
 
-        // Animate movement
         setTimeout(() => {
             if (nextId === 25) {
-                // Player finished!
                 const finishedRank = rankCounter;
                 setRankCounter(prev => prev + 1);
 
@@ -176,7 +166,7 @@ function App() {
                 setPlayers(updatedPlayers);
 
                 alert(`Parabéns ${currentPlayer.name}! Você terminou em ${finishedRank}º lugar!`);
-                checkGameOver(updatedPlayers); // Pass updated players because state update is async
+                checkGameOver(updatedPlayers);
             } else {
                 setPlayers(prev => prev.map((p, i) =>
                     i === currentPlayerIndex ? { ...p, currentNodeId: nextId } : p
@@ -202,9 +192,13 @@ function App() {
         if (correct) {
             nextTurn();
         } else {
-            alert(`Que pena, ${currentPlayer.name}! Você errou. Na próxima rodada terá que responder outra pergunta para tentar desbloquear.`);
-            nextTurn();
+            setIsPenaltyModalOpen(true);
         }
+    };
+
+    const handlePenaltyClose = () => {
+        setIsPenaltyModalOpen(false);
+        nextTurn();
     };
 
     return (
@@ -215,6 +209,8 @@ function App() {
 
             {gamePhase === 'setup' ? (
                 <GameSetup onStartGame={startGame} />
+            ) : gamePhase === 'rules' ? (
+                <GameRules onStartMatch={startMatch} />
             ) : gamePhase === 'game_over' ? (
                 <div className="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full animate-fade-in text-center">
                     <h2 className="text-3xl font-bold text-red-700 mb-6">Ranking Final</h2>
@@ -295,9 +291,6 @@ function App() {
                             result={diceResult}
                             onClick={handleDiceClick}
                             disabled={gamePhase !== 'turn_start' && !currentPlayer?.isBlocked}
-                        // Logic tweak: The Dice component might handle animation internally.
-                        // If blocked, we might want a "Responder" button instead of Dice?
-                        // For simplicity, we can let them click Dice to "Try" and it triggers the question immediately if blocked.
                         />
 
                         {currentPlayer?.isBlocked && gamePhase === 'turn_start' && (
@@ -309,10 +302,16 @@ function App() {
                 </div>
             )}
 
-            <CardModal
+            <QuizModal
                 isOpen={isModalOpen}
                 question={currentQuestion}
                 onClose={handleQuestionClose}
+            />
+
+            <PenaltyModal
+                isOpen={isPenaltyModalOpen}
+                onClose={handlePenaltyClose}
+                playerName={currentPlayer?.name || ''}
             />
         </div>
     );

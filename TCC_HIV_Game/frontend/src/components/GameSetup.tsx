@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logoImage from '../assets/Logotipo.png';
 
 interface GameSetupProps {
     onStartGame: (playerNames: string[]) => void;
@@ -33,6 +34,11 @@ export const GameSetup = ({ onStartGame }: GameSetupProps) => {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 bg-white rounded-xl shadow-xl max-w-md w-full animate-fade-in mx-auto mt-10">
+            {/* Logo */}
+            <div className="mb-6 flex justify-center">
+                <img src={logoImage} alt="Logotipo HIV de A a Z" className="max-w-[200px] w-full object-contain drop-shadow-md hover:scale-105 transition-transform duration-300" />
+            </div>
+
             <h2 className="text-3xl font-bold text-red-700 mb-6 text-center font-serif">Configuração do Jogo</h2>
 
             <div className="w-full mb-6">
@@ -44,8 +50,8 @@ export const GameSetup = ({ onStartGame }: GameSetupProps) => {
                             type="button"
                             onClick={() => handleCountChange(num)}
                             className={`w-12 h-12 rounded-full font-bold text-lg transition-all ${playerCount === num
-                                    ? 'bg-red-600 text-white scale-110 shadow-lg'
-                                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                ? 'bg-red-600 text-white scale-110 shadow-lg'
+                                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                                 }`}
                         >
                             {num}
