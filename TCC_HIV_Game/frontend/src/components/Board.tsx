@@ -40,7 +40,7 @@ export const Board = ({ nodes, players }: BoardProps) => {
     }, [players, nodes]);
 
     return (
-        <div className="relative w-full max-w-2xl mx-auto aspect-[3402/5669] bg-gray-200 rounded-lg overflow-hidden shadow-2xl border-4 border-gray-800">
+        <div className="relative w-full max-w-2xl mx-auto aspect-[3402/5669] rounded-lg overflow-hidden shadow-2xl border-4 border-gray-800">
             {/* Background Image */}
             <img
                 src="/src/assets/Tabuleiro HIV SITE.png"

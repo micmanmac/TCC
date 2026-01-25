@@ -5,6 +5,10 @@ import { QuizModal } from './components/QuizModal';
 import { PenaltyModal } from './components/PenaltyModal';
 import { GameRules } from './components/GameRules';
 import { GameSetup } from './components/GameSetup';
+import { ReferencesModal } from './components/ReferencesModal';
+import { OrientationLock } from './components/OrientationLock';
+
+import { useGameSounds } from './hooks/useGameSounds';
 
 import type { Node, Player, Question } from './types';
 import { QUESTIONS } from './data/questions';
@@ -43,11 +47,14 @@ function App() {
     const [gamePhase, setGamePhase] = useState<'setup' | 'rules' | 'turn_start' | 'moving' | 'answering' | 'game_over'>('setup');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPenaltyModalOpen, setIsPenaltyModalOpen] = useState(false);
+    const [isReferencesOpen, setIsReferencesOpen] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
     const [rankCounter, setRankCounter] = useState(1);
     const [usedQuestionIds, setUsedQuestionIds] = useState<Set<number>>(new Set());
     const [isRolling, setIsRolling] = useState(false);
     const [diceResult, setDiceResult] = useState(1);
+
+    const { isMuted, toggleMute, playRoll, playCorrect, playWrong, playWin } = useGameSounds();
 
     const currentPlayer = players[currentPlayerIndex];
 
@@ -64,16 +71,17 @@ function App() {
         setCurrentPlayerIndex(0);
         setRankCounter(1);
         setUsedQuestionIds(new Set());
-        setGamePhase('rules'); // Setup -> Rules
+        setGamePhase('rules');
     };
 
     const startMatch = () => {
-        setGamePhase('turn_start'); // Rules -> Game
+        setGamePhase('turn_start');
     };
 
     const checkGameOver = (currentPlayers: Player[]) => {
         const allFinished = currentPlayers.every(p => p.finishedRank !== undefined);
         if (allFinished) {
+            playWin();
             setGamePhase('game_over');
         } else {
             let nextIndex = (currentPlayerIndex + 1) % currentPlayers.length;
@@ -135,6 +143,7 @@ function App() {
         }
 
         setIsRolling(true);
+        playRoll();
 
         setTimeout(() => {
             const roll = Math.floor(Math.random() * 6) + 1;
@@ -159,6 +168,9 @@ function App() {
             if (nextId === 25) {
                 const finishedRank = rankCounter;
                 setRankCounter(prev => prev + 1);
+
+                // Play win sound individually for players finishing
+                playWin();
 
                 const updatedPlayers = players.map((p, i) =>
                     i === currentPlayerIndex ? { ...p, currentNodeId: 26, finishedRank } : p
@@ -202,8 +214,23 @@ function App() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8">
-            <h1 className="text-4xl font-bold text-red-700 mb-8 font-serif">
+        <div className="min-h-screen w-full bg-slate-100 flex flex-col items-center py-8 relative">
+            <OrientationLock />
+
+            {/* Mute Button - Top Right */}
+            <button
+                onClick={toggleMute}
+                className="absolute top-4 right-4 bg-white p-4 rounded-full shadow-xl hover:bg-gray-50 z-40 transition-transform hover:scale-110 border border-gray-200"
+                title={isMuted ? "Ativar Som" : "Mudo"}
+            >
+                {isMuted ? (
+                    <span className="text-4xl">🔇</span>
+                ) : (
+                    <span className="text-4xl">🔊</span>
+                )}
+            </button>
+
+            <h1 className="text-4xl font-bold text-red-700 mb-8 font-serif drop-shadow-sm">
                 HIV de A a Z: O Jogo
             </h1>
 
@@ -237,16 +264,13 @@ function App() {
                     </button>
                 </div>
             ) : (
-                <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl px-4">
+                <div className="flex flex-col md:flex-row gap-8 w-full max-w-6xl px-4 pb-20">
                     <div className="flex-1">
                         <Board nodes={nodes} players={players} />
-                        <div className="text-center text-sm text-gray-600 mt-4">
-                            <p>Página desenvolvida pelo Prof. Dr. Michel Mansur Machado</p>
-                            <p>michelmachado@unipampa.edu.br</p>
-                        </div>
                     </div>
 
                     <div className="w-full md:w-64 flex flex-col gap-4">
+                        {/* Player Info Cards */}
                         <div className="bg-white p-4 rounded-lg shadow">
                             <h3 className="font-bold text-gray-500 uppercase text-xs mb-2">Turno de</h3>
                             <div className="flex items-center gap-2">
@@ -302,16 +326,38 @@ function App() {
                 </div>
             )}
 
+            {/* Footer with Credits and References */}
+            <div className="w-full text-center text-sm text-gray-600 py-6 mt-auto border-t bg-slate-100">
+                <p className="font-semibold text-gray-800">HIV de A a Z: Jogo Educativo</p>
+                <p>Webpage desenvolvida pelo Prof. Dr. Michel Mansur Machado</p>
+                <p className="mb-2">michelmachado@unipampa.edu.br</p>
+
+                <button
+                    onClick={() => setIsReferencesOpen(true)}
+                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-full font-bold text-xs transition-colors"
+                >
+                    <span>📚</span> Referências
+                </button>
+            </div>
+
+            {/* Modals */}
             <QuizModal
                 isOpen={isModalOpen}
                 question={currentQuestion}
                 onClose={handleQuestionClose}
+                playCorrect={playCorrect}
+                playWrong={playWrong}
             />
 
             <PenaltyModal
                 isOpen={isPenaltyModalOpen}
                 onClose={handlePenaltyClose}
                 playerName={currentPlayer?.name || ''}
+            />
+
+            <ReferencesModal
+                isOpen={isReferencesOpen}
+                onClose={() => setIsReferencesOpen(false)}
             />
         </div>
     );

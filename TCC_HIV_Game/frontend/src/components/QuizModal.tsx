@@ -5,9 +5,11 @@ interface QuizModalProps {
     question: Question | null;
     isOpen: boolean;
     onClose: (correct: boolean) => void;
+    playCorrect: () => void;
+    playWrong: () => void;
 }
 
-export const QuizModal: React.FC<QuizModalProps> = ({ question, isOpen, onClose }) => {
+export const QuizModal: React.FC<QuizModalProps> = ({ question, isOpen, onClose, playCorrect, playWrong }) => {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [showFeedback, setShowFeedback] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
@@ -30,6 +32,13 @@ export const QuizModal: React.FC<QuizModalProps> = ({ question, isOpen, onClose 
         setSelectedAnswer(option);
         setIsCorrect(correct);
         setShowFeedback(true);
+
+        // Play sound immediately when feedback is shown
+        if (correct) {
+            playCorrect();
+        } else {
+            playWrong();
+        }
     };
 
     const handleContinue = () => {
