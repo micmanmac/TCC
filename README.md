@@ -68,7 +68,7 @@ Siga os passos abaixo para rodar o projeto localmente:
    npm run dev
    ```
 
-5. O jogo estará disponível em `http://localhost:5173`.
+5. O jogo estará disponível em https://hivdeaazojogo.netlify.app.
 
 ## 📂 Estrutura do Projeto
 
