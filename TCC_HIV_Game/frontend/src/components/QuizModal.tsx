@@ -52,7 +52,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({ question, isOpen, onClose,
         if (lowerCat.includes('diagnóstico')) return 'bg-blue-500';
         if (lowerCat.includes('tratamento')) return 'bg-red-600';
         if (lowerCat.includes('aconselhamento')) return 'bg-green-500';
-        if (lowerCat.includes('mitos')) return 'bg-purple-600';
+        if (lowerCat.includes('mitos')) return 'bg-teal-600';
         return 'bg-gray-500';
     };
 

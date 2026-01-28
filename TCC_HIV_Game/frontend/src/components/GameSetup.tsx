@@ -63,8 +63,9 @@ export const GameSetup = ({ onStartGame }: GameSetupProps) => {
             <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
                 {Array.from({ length: playerCount }).map((_, i) => (
                     <div key={i} className="flex flex-col animate-slide-in">
-                        <label className="text-sm font-semibold text-gray-600 mb-1">Nome do Jogador {i + 1}</label>
+                        <label htmlFor={`player-name-${i}`} className="text-sm font-semibold text-gray-600 mb-1">Nome do Jogador {i + 1}</label>
                         <input
+                            id={`player-name-${i}`}
                             type="text"
                             value={names[i]}
                             onChange={(e) => handleNameChange(i, e.target.value)}

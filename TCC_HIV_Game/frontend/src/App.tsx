@@ -336,7 +336,7 @@ function App() {
                     <div className="mt-8 flex flex-col items-center gap-2 border-t border-gray-100 pt-6 w-full">
                         <button
                             onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSc3D-cXgKQEKv2cA2nFNDTlcmKUMVPhdjX-Q6yi_Z3mPihFdA/viewform?usp=sharing&ouid=101902154688116812942', '_blank')}
-                            className="flex items-center gap-3 bg-white border-2 border-purple-600 text-purple-700 hover:bg-purple-50 font-bold py-3 px-6 rounded-xl transition-all hover:scale-105 shadow-sm"
+                            className="flex items-center gap-3 bg-white border-2 border-teal-600 text-teal-700 hover:bg-teal-50 font-bold py-3 px-6 rounded-xl transition-all hover:scale-105 shadow-sm"
                         >
                             <span className="text-xl">📋</span>
                             <span>Avalie sua experiência</span>
