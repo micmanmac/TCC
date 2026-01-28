@@ -1,6 +1,7 @@
 import type { Node, Player } from '../types';
 import { useEffect, useState } from 'react';
 import { GamePawn } from './GamePawn';
+import boardBg from '../assets/Tabuleiro HIV SITE.png';
 
 interface BoardProps {
     nodes: Node[];
@@ -43,7 +44,7 @@ export const Board = ({ nodes, players }: BoardProps) => {
         <div className="relative w-full max-w-2xl mx-auto aspect-[3402/5669] rounded-lg overflow-hidden shadow-2xl border-4 border-gray-800">
             {/* Background Image */}
             <img
-                src="/src/assets/Tabuleiro HIV SITE.png"
+                src={boardBg}
                 alt="Tabuleiro do Jogo"
                 className="absolute inset-0 w-full h-full object-fill"
             />

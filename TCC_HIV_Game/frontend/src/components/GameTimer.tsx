@@ -12,9 +12,9 @@ export const GameTimer: React.FC<GameTimerProps> = ({ seconds }) => {
     };
 
     return (
-        <div className="absolute top-4 left-4 bg-white px-6 py-3 rounded-xl shadow-lg border border-gray-200 z-40 flex items-center gap-3">
-            <span className="text-2xl">⏱️</span>
-            <span className="text-3xl font-mono font-bold text-gray-800">
+        <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-white px-3 py-2 md:px-6 md:py-3 rounded-xl shadow-lg border border-gray-200 z-40 flex items-center gap-3">
+            <span className="text-xl md:text-2xl">⏱️</span>
+            <span className="text-xl md:text-3xl font-mono font-bold text-gray-800">
                 {formatTime(seconds)}
             </span>
         </div>

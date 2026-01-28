@@ -6,7 +6,7 @@ import { PenaltyModal } from './components/PenaltyModal';
 import { GameRules } from './components/GameRules';
 import { GameSetup } from './components/GameSetup';
 import { ReferencesModal } from './components/ReferencesModal';
-import { OrientationLock } from './components/OrientationLock';
+
 import { GameTimer } from './components/GameTimer';
 import { FinishTurnModal } from './components/FinishTurnModal';
 
@@ -250,7 +250,7 @@ function App() {
 
     return (
         <div className="min-h-screen w-full bg-slate-100 flex flex-col items-center py-8 relative">
-            <OrientationLock />
+
 
             {/* Game Timer - Top Left (only when playing) */}
             {gamePhase !== 'setup' && gamePhase !== 'rules' && gamePhase !== 'game_over' && (
@@ -260,17 +260,17 @@ function App() {
             {/* Mute Button - Top Right */}
             <button
                 onClick={toggleMute}
-                className="absolute top-4 right-4 bg-white p-4 rounded-full shadow-xl hover:bg-gray-50 z-40 transition-transform hover:scale-110 border border-gray-200"
+                className="absolute top-2 right-2 md:top-4 md:right-4 bg-white p-2 md:p-4 rounded-full shadow-xl hover:bg-gray-50 z-40 transition-transform hover:scale-110 border border-gray-200"
                 title={isMuted ? "Ativar Som" : "Mudo"}
             >
                 {isMuted ? (
-                    <span className="text-4xl">🔇</span>
+                    <span className="text-2xl md:text-4xl">🔇</span>
                 ) : (
-                    <span className="text-4xl">🔊</span>
+                    <span className="text-2xl md:text-4xl">🔊</span>
                 )}
             </button>
 
-            <h1 className="text-4xl font-bold text-red-700 mb-8 font-serif drop-shadow-sm">
+            <h1 className="text-4xl font-bold text-red-700 mb-8 mt-24 md:mt-0 font-serif drop-shadow-sm">
                 HIV de A a Z: O Jogo
             </h1>
 
